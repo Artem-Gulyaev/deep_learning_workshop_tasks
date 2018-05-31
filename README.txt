@@ -8,7 +8,14 @@ HOW TO WORK HERE (ACTION ITEMS):
    and name it whatever you like.
 
 2) If you need to commit your solution to the repo,
-   please do it in YOUR BRANCH, not in the master.
+   please do it in
+          *) YOUR BRANCH, not in the master,
+          *) subfolder of relevant workshop folder.
+
+   e.g. for John Smith:
+        <branch jsmith>
+        PROJECT_ROOT/workshop2/jsmith/mycoolsolution1.py
+        PROJECT_ROOT/workshop2/jsmith/mycoolsolution2.py
 
 3) If you need to commit new data to the dataset,
    please do it on MASTER BRANCH, to make your examples
