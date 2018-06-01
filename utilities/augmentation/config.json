@@ -1,0 +1,17 @@
+{
+    "scale": {
+        "min": 0.3,
+        "max": 0.9
+    },
+    "rotation": {
+        "from": -30,
+        "to": 30
+    },
+    "input_path": "./cats",
+    "output_path": "./out_cats",
+    "output_shape": {
+        "width": 128,
+        "height": 128
+    },
+    "clones_amount": 3
+}
