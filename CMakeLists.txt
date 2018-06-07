@@ -55,7 +55,7 @@ endfunction(standalone_python_gen targetName sources_R)
 
 # main section
 
-add_custom_target(WorkshopTasksRawFiles SOURCES "README.txt"
+add_custom_target(WorkshopTasksRawFiles SOURCES "README.md"
                         "LICENSE")
 
 add_subdirectory("workshop2")
