@@ -12,6 +12,9 @@ related the the Machine Learning workshop.
     # numpy to be installed (for vectorized computations)
     sudo pip install numpy
 
+    # imeges manipulation library
+    sudo pip install imageio
+
     # matplotlib to be installed (for plotting the data)
     sudo pip install matplotlib
 
