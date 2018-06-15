@@ -8,6 +8,7 @@ import imageio
 import glob
 import json
 import os
+import math
 
 def init(configPath):
     with open(configPath) as jsonData:
@@ -75,16 +76,25 @@ def processImage(image, config, fileName):
         shiftMatrix = np.array([[1,0,shift_y/clone.shape[0]],[0,1,shift_x/clone.shape[1]],[0,0,1]])
 
         transformationMatrix = inv(scaleMatrix.dot(shiftMatrix).dot(rotationMatrix))
-        print transformationMatrix
+
         for y in range(0, clone.shape[0]):
             for x in range(0, clone.shape[1]):
                 destinationCoordinate = np.array([y/clone.shape[0] - 0.5, x/clone.shape[1] - 0.5, 1])
 
+                delta = np.array(((destinationCoordinate > 0) - 0.5) * 2 / scale)
+                delta = np.divide(np.divide(image.shape, clone.shape), delta[0:2])
+
                 sourceCoordinate = transformationMatrix.dot(destinationCoordinate)
                 if (sourceCoordinate[0:2] < 0.5).all() and (sourceCoordinate[0:2] > -0.5).all():
-                    s_y = int((sourceCoordinate[0] + 0.5) * image.shape[0])
-                    s_x = int((sourceCoordinate[1] + 0.5) * image.shape[1])
-                    clone[y,x] = image[s_y,s_x]
+
+                    s_1 = ((sourceCoordinate[0:2] + 0.5) * image.shape).astype(int)
+                    s_2 = s_1 - delta.astype(int)
+                    s_min = np.minimum(s_1, s_2)
+                    s_max = np.maximum(s_1, s_2)
+
+                    area = image[s_min[0] : 1 + s_max[0], s_min[1] : 1 + s_max[1]]
+                    #raw_input()
+                    clone[y,x] = np.amin(area)
 
         counter += 1
         writeImage(config['output_path']+'/{0}_{1}.png'.format(fileName,i), clone)
