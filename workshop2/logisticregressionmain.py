@@ -836,11 +836,11 @@ def mainCircleSquareTest(separate_plots = False):
                                     , epochs)
 
     # validation set generation:
-    (validX, validY) = generateTestDataSetSquareCircle(img_w, img_h
+    (valid_X, valid_Y) = generateTestDataSetSquareCircle(img_w, img_h
                                                        , m)
     # estimation of results of learning process
     (trainErrors, validationErrors) = estimateModel(params, X, Y
-                                                  , validX, validY)
+                                                  , valid_X, valid_Y)
 
     # plot info about results and validate the model
     plotLogisticRegressionResults(params, W_initial, img_w, img_h
@@ -859,23 +859,29 @@ def mainCats(separate_plots = False):
     img_h = 64
     learning_rate = 0.001
     epochs = 10000
-    validation_dataset_size_relative = 0.05
+    validation_set_size_relative = 0.10
 
     # acquire training data set
     (full_X, full_Y) = loadLabeledCatsData(cats_data_path
                                            , img_w, img_h)
+    # as long as X, Y might not be really randomly shuffled
+    # we need to shuffle data stored in X and Y
+    (full_X, full_Y) = shuffleDataset(full_X, full_Y)
+
+    # computation of validation and trating sets size
+    # for available data
     total_m = np.shape(full_X)[1]
-    validation_m = total_m * validation_dataset_size_relative
+    validation_m = math.trunc(total_m * validation_set_size_relative)
     m = total_m - validation_m
 
     print("Training set size: " + str(m))
     print("Validation set size: " + str(validation_m))
-    plotExamples(X, Y, img_w, img_h, positive_count = 2
+    plotExamples(full_X, full_Y, img_w, img_h, positive_count = 2
                  , negative_count = 2)
 
-    # as long as X, Y might not be really randomly shuffled
-    # we need to shuffle data stored in X and Y
-    (X, Y) = shuffleDataset(X, Y)
+    # extraction of training set from the data
+    X = full_X[:, 0 : m - 1]
+    Y = full_Y[:, 0 : m - 1]
 
     # initialize hypotesis parameters
     params = {}
@@ -886,23 +892,27 @@ def mainCats(separate_plots = False):
     (W, B, cost_history) = optimize(params, X, Y, learning_rate
                                     , epochs)
 
-    # validation set generation:
-    # TODO
+    # validation set extraction:
+    valid_X = full_X[:, m :]
+    valid_Y = full_Y[:, m :]
 
+    # estimation of results of learning process
+    (trainErrors, validationErrors) = estimateModel(params, X, Y
+                                                    , valid_X
+                                                    , valid_Y)
 
-
-
-
-
-    plotHistory(cost_history, m, epochs)
-
-    # plot neuron weight vector
-    plt.imshow(np.reshape(params["W"], (img_w, img_h)))
-    plt.title("The logistic regression neuron weight vector, \n"
-              + str(m) + " examples, " + str(epochs) + " epochs.")
+    # plot info about results and validate the model
+    plotLogisticRegressionResults(params, W_initial, img_w, img_h
+                                  , learning_rate, m, epochs
+                                  , cost_history
+                                  , trainErrors, validationErrors
+                                  , separate_plots
+                                  , "Cats/non-cats dataset images"
+                                    + " with " + str(validation_m)
+                                    + " validation set size")
 
 # to run with circles and squares
-mainCircleSquareTest(separate_plots = False)
+#mainCircleSquareTest(separate_plots = False)
 
 # to run with cats
-#mainCats(separate_plots = False)
+mainCats(separate_plots = False)
