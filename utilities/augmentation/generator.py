@@ -26,18 +26,66 @@ def init(configPath):
             return json.loads('{}')
         return data
 
+def imageAlphaOnWhite(img):
+    """
+    Applies the image alpha channel to render it on
+    white background.
+    PARAMETERS:
+        img		- numpy array, representing RGBA normalized image
+                  , of shape (w, h, ...)
+    RETURNS:
+        resulting rendered image of the same shape as input image
+        along geometric coordinates, but without alpha channel values.
+    """
+    img_w = np.shape(img)[0]
+    img_h = np.shape(img)[1]
+
+    if (len(np.shape(img)) == 3):
+        if (np.shape(img)[2] == 4):
+            white = np.ones((img_w, img_h, 1))
+
+            alpha = np.reshape(img[:, :, 3], (img_w, img_h, 1))
+            img[:, :, 0:2] = (img[:, :, 0:2] * alpha
+                              + white * (1 - alpha))
+            img = np.delete(img, 3, 2)
+    return img
+
+def imageGrayScale(img):
+    """
+    Applies the transformation to grayscale for given image.
+    PARAMETERS:
+        img		- numpy array, representing RGB normalized image
+    RETURNS:
+        resulting converted to grayscale image of the same
+        shape as input image along geometrix axis, but with single
+        color channel.
+    """
+    if (len(np.shape(img)) == 3):
+        img = np.mean(img, 2)
+    return img
+
+def imageAutocontrast(img):
+    """
+    Applies the autocontrast to the image provided
+    PARAMETERS:
+        img		- numpy array, representing grayscale normalized image
+                  of shape (img_w, img_h)
+    RETURNS:
+        resulting autocontrasted input image of the same shape
+    """
+    min_val = np.amin(img[:, :])
+    max_val = np.amax(img[:, :])
+    img = ((img[:, :] - min_val) / (max_val - min_val))
+    return img
+
 def readImage(imagePath, format):
-    image = imageio.imread(imagePath, format)
+    image = imageio.imread(imagePath, format) / 255.0
     l = len(image.shape)
-    outImage = np.zeros((image.shape[0], image.shape[1]))
-    for y in range(0, image.shape[0]):
-        for x in range(0, image.shape[1]):
-            if l > 2:
-                c = np.sum(image[y,x,0:3]) / 3.0
-            else:
-                c = image[y,x]
-            if c > 128:
-                outImage[y,x] = 255
+    #outImage = np.zeros((image.shape[0], image.shape[1]))
+
+    outImage = imageAlphaOnWhite(image)
+    outImage = imageGrayScale(outImage)
+    outImage = imageAutocontrast(outImage)
     return outImage
 
 def writeImage(imagePath, image):
@@ -69,23 +117,26 @@ def processImage(image, config, fileName):
         scale = np.random.uniform(config['scale']['min'], config['scale']['max'])
         scaleMatrix = np.array([[scale,0,0],[0,scale,0],[0,0,1]])
 
-        shiftXMax = clone.shape[1] * (1.0 - scale)
-        shiftYMax = clone.shape[0] * (1.0 - scale)
+        shiftXMax = 1.0 - scale
+        shiftYMax = 1.0 - scale
         shift_x = np.random.uniform(-shiftXMax, shiftXMax)
         shift_y = np.random.uniform(-shiftYMax, shiftYMax)
-        shiftMatrix = np.array([[1,0,shift_y/clone.shape[0]],[0,1,shift_x/clone.shape[1]],[0,0,1]])
+        shiftMatrix = np.array([[1,0,shift_y],[0,1,shift_x],[0,0,1]])
 
-        transformationMatrix = inv(scaleMatrix.dot(shiftMatrix).dot(rotationMatrix))
+        transformationMatrix = (
+               inv(scaleMatrix.dot(shiftMatrix).dot(rotationMatrix)))
 
         for y in range(0, clone.shape[0]):
             for x in range(0, clone.shape[1]):
-                destinationCoordinate = np.array([y/clone.shape[0] - 0.5, x/clone.shape[1] - 0.5, 1])
+                destinationCoordinate = np.array(
+                     [y/clone.shape[0] - 0.5, x/clone.shape[1] - 0.5, 1])
 
                 delta = np.array(((destinationCoordinate > 0) - 0.5) * 2 / scale)
-                delta = np.divide(np.divide(image.shape, clone.shape), delta[0:2])
+                delta = np.divide(image.shape, clone.shape) / delta[0:2]
 
                 sourceCoordinate = transformationMatrix.dot(destinationCoordinate)
-                if (sourceCoordinate[0:2] < 0.5).all() and (sourceCoordinate[0:2] > -0.5).all():
+                if (sourceCoordinate[0:2] < 0.5).all() and (
+                             sourceCoordinate[0:2] > -0.5).all():
 
                     s_1 = ((sourceCoordinate[0:2] + 0.5) * image.shape).astype(int)
                     s_2 = s_1 - delta.astype(int)
@@ -93,7 +144,6 @@ def processImage(image, config, fileName):
                     s_max = np.maximum(s_1, s_2)
 
                     area = image[s_min[0] : 1 + s_max[0], s_min[1] : 1 + s_max[1]]
-                    #raw_input()
                     clone[y,x] = np.amin(area)
 
         counter += 1
@@ -106,21 +156,22 @@ def main():
     if len(config) != 0 and checkPathAndCreatIfNotExist(config['output_path']):
         counter = 0
         for imagePath in glob.glob(config['input_path']+'/*'):
-            fileNameWithExtention = os.path.basename(imagePath)
-            fileName,extention = fileNameWithExtention.split('.')
-            if extention == 'png':
-                print('--PNG: {0}'.format(fileName))
-                image = readImage(imagePath, 'PNG-PIL')
-            elif extention == 'png':
-                print('--JPEG: {0}'.format(fileName))
-                image = readImage(imagePath, 'JPEG-PIL')
-            elif extention == 'bmp':
-                print('--BMP: {0}'.format(fileName))
-                image = readImage(imagePath, 'BMP-PIL')
-            else:
-                continue
+            if os.path.isfile(imagePath):
+                fileNameWithExtention = os.path.basename(imagePath)
+                fileName,extention = fileNameWithExtention.split('.')
+                if extention == 'png':
+                    print('--PNG: {0}'.format(fileName))
+                    image = readImage(imagePath, 'PNG-PIL')
+                elif extention == 'png':
+                    print('--JPEG: {0}'.format(fileName))
+                    image = readImage(imagePath, 'JPEG-PIL')
+                elif extention == 'bmp':
+                    print('--BMP: {0}'.format(fileName))
+                    image = readImage(imagePath, 'BMP-PIL')
+                else:
+                    continue
 
-            counter += processImage(image, config, fileName)
+            counter += processImage(image * 255., config, fileName)
 
     print('Created {0} images'.format(counter))
 
