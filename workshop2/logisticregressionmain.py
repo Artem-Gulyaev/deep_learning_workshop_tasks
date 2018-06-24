@@ -4,6 +4,9 @@ import math
 import matplotlib.pyplot as plt
 import os
 
+# for cmd line arguments parsing
+import argparse
+
 # for images manipulations (loading and saving)
 import imageio
 
@@ -547,7 +550,7 @@ def imageAutocontrast(img):
     """
     min_val = np.amin(img[:, :])
     max_val = np.amax(img[:, :])
-    img = ((img[:, :] - min_val) / (max_val - min_val))
+    img = ((img[:, :] - min_val) / (max_val - min_val + 1))
     return img
 
 def loadLabeledCatsData(dirName
@@ -643,9 +646,10 @@ def plotFullValidationResults(trainingError, validationError
 
     locations = np.arange(N)
     train = np.array([trainingError[0], trainingError[1]
-                      , trainingError[0] + trainingError[1]])
-    valid = np.array([validationError[0], validationError[1]
+                      , trainingError[0] + trainingError[1]]) * 100
+    valid = (np.array([validationError[0], validationError[1]
                       , validationError[0] + validationError[1]])
+            * 100)
 
     trainBars = ax.bar(locations, train, bar_width, color = 'blue')
     validBars = ax.bar(locations + bar_width, valid, bar_width
@@ -656,10 +660,10 @@ def plotFullValidationResults(trainingError, validationError
 
     for i in range(3):
         ax.text(i - bar_width * 0.5 + 0.1, train[i] + 0.005
-                , str(train[i]) + "%", color = 'blue')
+                , "{:.2f}".format(train[i]) + "%", color = 'blue')
     for i in range(3):
         ax.text(i + bar_width * 0.5 + 0.1, valid[i] + 0.005
-                , str(valid[i]) + "%", color = 'black')
+                , "{:.2f}".format(valid[i]) + "%", color = 'black')
 
     ax.set_ylabel('Relative error, [%]')
     x_labels = ["False positive", "False negative", "Total"]
@@ -729,17 +733,25 @@ def plotNeuronWeights(params, img_w, img_h, title
     if (show):
         plt.show()
 
-def getCatsDatasetFolder():
+def getCatsDatasetFolder(cats_dir):
     """
     Provides the location of the cats dataset.
+    PARAMETERS:
+        cats_dir        - [str] - defines the directory to search
+                        cats images to process, if None, then
+                        default directory is used. Note: if relative
+                        then counted relative to the current
+                        working directory.
     RETURNS:
-        the cats dataset folder path
+        the cats dataset absolute folder path
     """
-    script_location = os.path.realpath(__file__)
-    tasks_path = os.path.dirname(os.path.dirname(script_location))
-    common_data_path = os.path.join(tasks_path, 'commonlearningdata')
-    cats_data_path = os.path.join(common_data_path, 'cartooncats')
-    return cats_data_path
+    if (cats_dir is None):
+        script_location = os.path.realpath(__file__)
+        tasks_path = os.path.dirname(os.path.dirname(script_location))
+        data_path = os.path.join(tasks_path, 'commonlearningdata')
+        return os.path.join(data_path, 'cartooncats')
+    else:
+        return os.path.realpath(cats_dir);
 
 def plotLogisticRegressionResults(params, W_initial, img_w, img_h
                                   , learning_rate, m, epochs
@@ -804,13 +816,15 @@ def plotLogisticRegressionResults(params, W_initial, img_w, img_h
 ####   MAINS   ####
 ###################
 
-def mainCircleSquareTest(separate_plots = False):
+def mainCircleSquareTest(m = 1000, separate_plots = False):
     """
     Run this to fit the logistic regression model on an
     artificially generated dataset of images of squares and
     circles and verify the performance on training set and
     validation set.
     PARAMETERS:
+        m               - [int] - number of examples to use
+                        as training set.
         separate_plots  - [bool] - if true then all plots are done
                         independently on separate sheets.
     """
@@ -819,7 +833,6 @@ def mainCircleSquareTest(separate_plots = False):
     img_w = 128
     img_h = 128
     learning_rate = 0.01
-    m = 50
     epochs = 1000
 
     # acquire training data set
@@ -852,16 +865,31 @@ def mainCircleSquareTest(separate_plots = False):
                                     + " with " + str(m)
                                     + " validation set size")
 
-def mainCats(separate_plots = False):
+def mainCats(cats_dir = None, separate_plots = False):
+    """
+    Run this to fit the logistic regression model on an
+    external set of images of cats and non-cats
+    and verify the performance on training set and
+    validation set.
+    PARAMETERS:
+        cats_dir        - [str] - defines the directory to search
+                        cats images to process, if None, then
+                        default directory is used. Note: if relative
+                        then counted relative to the current
+                        working directory.
+        separate_plots  - [bool] - if true then all plots are done
+                        independently on separate sheets.
+    """
+
     # general parameters
-    cats_data_path = getCatsDatasetFolder()
+    cats_data_path = getCatsDatasetFolder(cats_dir)
     img_w = 64
     img_h = 64
-    learning_rate = 0.001
+    learning_rate = 0.003
     epochs = 10000
     validation_set_size_relative = 0.10
 
-    # acquire training data set
+    # acquire full data set
     (full_X, full_Y) = loadLabeledCatsData(cats_data_path
                                            , img_w, img_h)
     # as long as X, Y might not be really randomly shuffled
@@ -911,8 +939,43 @@ def mainCats(separate_plots = False):
                                     + " with " + str(validation_m)
                                     + " validation set size")
 
-# to run with circles and squares
-#mainCircleSquareTest(separate_plots = False)
 
-# to run with cats
-mainCats(separate_plots = False)
+def main():
+    parser = argparse.ArgumentParser(
+                    description = 'Logistic regression example.')
+    parser.add_argument('-a', '--artificial-dataset'
+                        , dest = 'use_artificial_dataset'
+                        , action = 'store_true'
+                        , help = 'Use internally generated dataset'
+                                 + ' instead of loading dataset'
+                                 + ' from directory.');
+    parser.add_argument('-d', '--cats-dir', dest = 'cats_dir'
+                        , help = 'Provides custom cats directory'
+                                 + ' to process (relevant when'
+                                 + ' not in artificial dataset'
+                                 + ' mode).');
+    parser.add_argument('-s', '--separate-plots'
+                        , dest = 'separate_plots', default = False
+                        , help = 'If set, then will plot all plots'
+                                 + ' in separate windows, instead'
+                                 + ' of plotting them all together'
+                                 + ' on one plot.');
+    parser.add_argument('-m', '--examples', nargs = '?'
+                        , type = int, default = 1000, dest = 'm'
+                        , help = 'Number of training examples to'
+                                 + ' use (relevant for artificial'
+                                 + ' dataset generation).');
+
+    args = parser.parse_args()
+
+    print("Running with following args: " + str(args))
+
+    if (args.use_artificial_dataset):
+        # run with circles and squares
+        mainCircleSquareTest(args.m, args.separate_plots)
+    else:
+        # run with cats from external files
+        mainCats(args.cats_dir, args.separate_plots)
+
+if __name__ == "__main__":
+    main()
