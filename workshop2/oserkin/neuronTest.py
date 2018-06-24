@@ -1,7 +1,8 @@
 import numpy as np
 import math
-#import matplotlib.pyplot as plt
-
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
+from matplotlib import cm
 def createDataSet(img_w,img_h,m):
     nx = img_w * img_h
     X = np.zeros((m,nx))
@@ -76,14 +77,16 @@ def forwardProp(params,X):
     return Y_hat
 
 def sigmoid(X):
-    return 1/ (1+ np.exp(-X))
-
+    return 1.0 / (1.0 + np.exp(-X))
+def sigmoidDerivative(X):
+    sigma = sigmoid(X)
+    return sigma*(1-sigma)
 def backProp(params,X,Y,Y_hat):
     J= costFun(Y,Y_hat)
     params["J"] = J
     Z = params["Z"]
     m = params["SNum"]
-    print("m=",m)
+
 
 def costFun(Y,Y_hat):
     losses = lossFucntioncrossEntropy(Y,Y_hat)
@@ -107,9 +110,16 @@ def main():
     params = {}
     params["SNum"]= SNum
     initFun(params,img_w*img_h)
-    (W,B,cost_history) = optimize(params,X,Y,learning_rate,epochs)
+    #(W,B,cost_history) = optimize(params,X,Y,learning_rate,epochs)
 
-    #print(params)
+    x= y = np.linspace(0.05,1.0,30)
+    X1,Y1 = np.meshgrid(x,y)
+    Z1 = lossFucntioncrossEntropy(X1,Y1)
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    #ax.contour3D(X1,Y1,Z1,50,cmap='binary')
+    ax.plot_wireframe(X1,Y1,Z1)
+    plt.show()
 
 
 main()
