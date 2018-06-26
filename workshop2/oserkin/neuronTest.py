@@ -30,8 +30,8 @@ def createDataSet(img_w,img_h,m):
 
 def initFun(params,nx):
     W = np.random.randn(1,nx) ##/ nx
-    for i in range(nx):
-      W[0][i] = 0.1 #i*0.01
+    #for i in range(nx):
+    #  W[0][i] = 0.1 #i*0.01
     B = np.zeros((1,1))
     params["W"] = W # weight vector
     params["B"] = B
@@ -55,8 +55,11 @@ def optimizationStep(params, X,Y,learning_rate):
     print("AEX")
     Y_hat = forwardProp(params,X)
 
-    backProp(params,X,Y,Y_hat)
-
+    (dW,dB)=backProp(params,X,Y,Y_hat)
+    W = W -learning_rate*dW
+    B = B -learning_rate*dB
+    params["W"] = W
+    params["B"] = B
     return (W,B)
 
 def forwardProp(params,X):
@@ -86,40 +89,65 @@ def backProp(params,X,Y,Y_hat):
     params["J"] = J
     Z = params["Z"]
     m = params["SNum"]
-
+    dY_hat = costFunderivative(Y,Y_hat)
+    dZ = dY_hat * sigmoidDerivative(Z)
+    #print("dZ=",dZ)
+    Xr = np.transpose(X)
+    #print("X=",Xr)
+    dW = np.dot(dZ,np.transpose(Xr))
+    dB = np.sum(dZ,1)
+    params["dW"] = dW
+    params["db"] = dB
+    return (dW,dB)
 
 def costFun(Y,Y_hat):
     losses = lossFucntioncrossEntropy(Y,Y_hat)
-    print("Y=",Y)
-    print("Losses", losses)
     cost = np.sum(losses)
     cost /= losses.size
     return cost
-
+def costFunderivative(Y,Y_hat):
+    derv_y_hat = lossFucntioncrossEntropyDerivative(Y,Y_hat)
+    derv_y_hat /= derv_y_hat.size
+    return derv_y_hat
 def lossFucntioncrossEntropy(Y,Y_hat):
     return  - Y * np.log(Y_hat) - (1 - Y) * np.log(1 - Y_hat)
-
+def lossFucntioncrossEntropyDerivative(Y,Y_hat):
+    return  -(Y/Y_hat) + (1-Y) / (1-Y_hat)
 def main():
     img_w = 4
     img_h = 4
     learning_rate = 0.01
-    epochs = 1
+    epochs = 9
     SNum = 4
     print("Neron   recognition start point")
     (X,Y)=createDataSet(img_w,img_h,SNum)
     params = {}
     params["SNum"]= SNum
     initFun(params,img_w*img_h)
-    #(W,B,cost_history) = optimize(params,X,Y,learning_rate,epochs)
+    (W,B,cost_history) = optimize(params,X,Y,learning_rate,epochs)
 
-    x= y = np.linspace(0.05,1.0,30)
-    X1,Y1 = np.meshgrid(x,y)
-    Z1 = lossFucntioncrossEntropy(X1,Y1)
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    #ax.contour3D(X1,Y1,Z1,50,cmap='binary')
-    ax.plot_wireframe(X1,Y1,Z1)
-    plt.show()
+    #x= np.linspace(0.05,0.99,30)
+    #y = np.linspace(0.05,0.99,30)
+    #X1,Y1 = np.meshgrid(x,y)
+    #Z1 = lossFucntioncrossEntropy(X1,Y1)
+    #fig = plt.figure()
+    #ax = plt.axes(projection='3d')
+    #ax.plot_wireframe(X1,Y1,Z1)
+    #plt.show()
 
+
+    #Z1 = lossFucntioncrossEntropyDerivative(X1,Y1)
+    #fig = plt.figure()
+    #ax = plt.axes(projection='3d')
+    #ax.plot_wireframe(X1,Y1,Z1)
+    #plt.show()
+
+
+
+    #ax = plt.gca();
+
+    #plt.plot(x,lossFucntioncrossEntropy(1,x))
+    #plt.plot(x,lossFucntioncrossEntropy(0,x))
+    #plt.show();
 
 main()
