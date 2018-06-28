@@ -27,7 +27,32 @@ def createDataSet(img_w,img_h,m):
     #print("Y")
     #print (Y)
     return (X,Y)
+def generateDataSet(img_w,img_h,m):
+    r_max = 3
+    r_min = 2
 
+    nx = img_w*img_h
+    X = np.zeros((m,nx))
+    Y = np.zeros((1,m))
+    for i in range(m):
+        img = np.zeros((img_w,img_h))
+        r = np.random.randint(r_min,r_max+1)
+        ox = np.random.randint(r, img_w-r)
+        oy = np.random.randint(r,img_h -r)
+        if (np.random.rand()> 0.5):
+            for x in range(ox -r, ox+r+1):
+                for y in range(oy -r ,oy+r +1):
+                    if(math.hypot(x-ox,y-oy)<=r):
+                        img[x,y] = 1.0
+            y= 1.0
+        else:
+            for x in range(ox-r,ox+r+1):
+                for y in range(oy-r,oy+r +1):
+                    img[x,y] = 1.0
+            y = 0.0
+        X[i,:] = np.reshape(img,(nx))
+        Y[:,i] = y
+    return (X,Y)
 def initFun(params,nx):
     W = np.random.randn(1,nx) ##/ nx
     #for i in range(nx):
@@ -114,13 +139,13 @@ def lossFucntioncrossEntropy(Y,Y_hat):
 def lossFucntioncrossEntropyDerivative(Y,Y_hat):
     return  -(Y/Y_hat) + (1-Y) / (1-Y_hat)
 def main():
-    img_w = 4
-    img_h = 4
+    img_w = 10
+    img_h = 10
     learning_rate = 0.01
     epochs = 9
     SNum = 4
     print("Neron   recognition start point")
-    (X,Y)=createDataSet(img_w,img_h,SNum)
+    (X,Y)=generateDataSet(img_w,img_h,SNum)
     params = {}
     params["SNum"]= SNum
     initFun(params,img_w*img_h)
