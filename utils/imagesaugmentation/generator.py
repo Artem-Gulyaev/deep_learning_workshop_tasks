@@ -75,7 +75,7 @@ def imageAutocontrast(img):
     """
     min_val = np.amin(img[:, :])
     max_val = np.amax(img[:, :])
-    img = ((img[:, :] - min_val) / (max_val - min_val))
+    img = ((img[:, :] - min_val) / (max_val - min_val + 1))
     return img
 
 def readImage(imagePath, format):

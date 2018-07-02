@@ -58,5 +58,7 @@ endfunction(standalone_python_gen targetName sources_R)
 add_custom_target(WorkshopTasksRawFiles SOURCES "README.md"
                         "LICENSE")
 
+add_subdirectory("utils")
 add_subdirectory("workshop2")
+add_subdirectory("workshop3")
 add_subdirectory("commonlearningdata")
