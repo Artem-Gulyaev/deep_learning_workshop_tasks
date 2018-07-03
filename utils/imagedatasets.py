@@ -1,5 +1,4 @@
 import numpy as np
-import h5py
 import math
 import matplotlib.pyplot as plt
 import os
@@ -64,7 +63,7 @@ def generateTestDataSetSquareCircle(img_w, img_h, m):
 
     return (X, Y)
 
-def loadLabeledCatsImagesHelper(dirName
+def loadBinaryLabeledImagesHelper(dirName
         , expected_w = 64, expected_h = 64
         , extensions = ("png", "jpg", "jpeg")):
     """
@@ -75,9 +74,9 @@ def loadLabeledCatsImagesHelper(dirName
         dirName - [str] - the path to the directory to scan.
     RETURNS:
         list of tuples (bool, image), where
-            bool - True if the image is a cat picture
+            bool - True if the image is a positive example.
                    False else.
-            image - numpy array
+            image - numpy array of shape (img_w, img_h)
             file name - the file name of the corresponding file
     NOTE: * directory scan is non-recursive,
           * if image doesn't fit the expected W and H,
@@ -89,8 +88,6 @@ def loadLabeledCatsImagesHelper(dirName
           + dirName)
 
     data = []
-    expected_w = 64
-    expected_h = 64
     for filename in os.listdir(dirName):
         fits_extension = False
         for ext in extensions:
@@ -100,20 +97,26 @@ def loadLabeledCatsImagesHelper(dirName
         if not fits_extension:
             continue
 
-        isCat = None
+        isPos = None
         if (filename.startswith('1_')):
-            isCat = True
+            isPos = True
         elif (filename.startswith('0_')):
-            isCat = False
+            isPos = False
 
-        if (isCat is not None):
+        if (isPos is not None):
             img = imageio.imread(os.path.join(dirName, filename))
             if (np.shape(img)[0] == expected_w
                     and np.shape(img)[1] == expected_h):
                 print(filename + " -> " + str(np.shape(img)) + "("
-                        + ("is a cat" if isCat else "is not a cat")
+                        + ("is positive example " if isPos
+                                else "is negative example")
                         + ")")
-                data.append((isCat, img, filename))
+                data.append((isPos, img, filename))
+            else:
+                print(filename + " ignored: size mismatch,"
+                      + " actual shape is " + str(img.shape)
+                      + " expected is (" + str(expected_h)
+                      + ", " + str(expected_h) + ")")
 
     print("Loaded " + str(len(data)) + " images.")
     return data
@@ -173,30 +176,31 @@ def imageAutocontrastSingle(img):
     img = ((img[:, :] - min_val) / (max_val - min_val + 1))
     return img
 
-def loadLabeledCatsData(dirName
+def loadBinaryLabeledImagesDataset(dirName
         , expected_w = 64, expected_h = 64
         , extensions = ("png", "jpg", "jpeg")):
     """
     Provides the autocontrasted, normalized to range [0.0; 1.0]
     grayscale images (if alpha channel was in the original image
     then white background is applied to get rid of alpha)
-    from given directory as labeled dataset arrays.
+    from given directory as binary labeled dataset arrays.
     PARAMETERS:
-        loadLabeledCatsImagesHelper description for details.
+        loadBinaryLabeledImagesHelper description for details.
     RETURNS:
         (X,Y)        - where
             X - [float: nx x m] - the set of unrowed to
                 vertical vector images, nx = expected_w * expected_h
                 m - is a number of examples.
-            Y - [float: 1 x m]  - the set of correct answers.
-    NOTES: * see loadLabeledCatsImagesHelper,
+            Y - [float: 1 x m]  - the set of correct answers
+                1.0 for positive answer, 0.0 for negative.
+    NOTES: * see loadBinaryLabeledImagesHelper.
     """
 
     img_w = expected_w
     img_h = expected_h
 
-    data = loadLabeledCatsImagesHelper(dirName, img_w , img_h
-                                       , extensions)
+    data = loadBinaryLabeledImagesHelper(dirName, img_w , img_h
+                                         , extensions)
 
     m = len(data)
     nx = img_w * img_h
@@ -210,9 +214,9 @@ def loadLabeledCatsData(dirName
         img = data[i][1] / 255.0
         filename = data[i][2]
 
-        img = imageAlphaOnWhite(img)
-        img = imageGrayScale(img)
-        img = imageAutocontrast(img)
+        img = imageAlphaOnWhiteSingle(img)
+        img = imageGrayScaleSingle(img)
+        img = imageAutocontrastSingle(img)
 
         X[:, i] = np.reshape(img, nx)
         Y[:, i] = label

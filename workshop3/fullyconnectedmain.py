@@ -1,5 +1,4 @@
 import numpy as np
-import h5py
 import math
 import matplotlib.pyplot as plt
 import os
@@ -16,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(
                                     os.path.abspath(__file__) ) ) )
 # to generate our artificial images dataset
 from utils import imagedatasets
+from utils import datasetscommon
 from utils import reports
 
 ###
@@ -752,7 +752,7 @@ def generalOptimizationAndPlottingSequence(
     cost_history = None
 
     # helper variables
-    full_plots = epochs_total / plot_each_epoch
+    full_plots = epochs_total // plot_each_epoch
     remainder_plots = epochs_total % plot_each_epoch
 
     m_train = X.shape[1]
@@ -904,11 +904,16 @@ def mainCats(cats_dir = None
     validation_set_size_relative = 0.10
 
     # acquire full data set
-    (full_X, full_Y) = loadLabeledCatsData(cats_data_path
-                                           , img_w, img_h)
+    (full_X, full_Y) = imagedatasets.loadBinaryLabeledImagesDataset(
+                                        cats_data_path, img_w, img_h)
+
+    if (full_X.size == 0):
+        print "Loaded images dataset is empty, nothing to work with."
+        return
+
     # as long as X, Y might not be really randomly shuffled
     # we need to shuffle data stored in X and Y
-    (full_X, full_Y) = shuffleDataset(full_X, full_Y)
+    (full_X, full_Y) = datasetscommon.shuffleDataset(full_X, full_Y)
 
     # computation of validation and trating sets size
     # for available data

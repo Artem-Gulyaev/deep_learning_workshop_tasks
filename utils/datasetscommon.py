@@ -19,4 +19,3 @@ def shuffleDataset(X, Y):
     outY = Y[:, permutation]
 
     return (outX, outY)
-
