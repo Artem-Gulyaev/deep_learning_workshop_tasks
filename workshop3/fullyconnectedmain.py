@@ -590,7 +590,7 @@ def plotFullyConnectedNetworkScheme(layers, nx, show = False):
     box_size = 1.0 / float(boxes_count)
 
     # font size
-    fsize = 12
+    fsize =6
     xshift = 1.2 * box_size / 2.0
 
     # input vector box
@@ -1013,7 +1013,7 @@ def main():
     args = parser.parse_args()
 
     print("Running with following args: " + str(args))
-
+    plt.rc('font',size=4)
     if (args.use_artificial_dataset):
         # run with circles and squares
         mainCircleSquareTest(args.m
