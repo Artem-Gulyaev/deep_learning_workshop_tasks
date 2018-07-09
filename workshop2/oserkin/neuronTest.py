@@ -55,8 +55,8 @@ def generateDataSet(img_w,img_h,m):
     return (X,Y)
 def initFun(params,nx):
     W = np.random.randn(1,nx) ##/ nx
-    #for i in range(nx):
-    #  W[0][i] = 0.1 #i*0.01
+    for i in range(nx):
+      W[0][i] = 0.1 #i*0.01
     B = np.zeros((1,1))
     params["W"] = W # weight vector
     params["B"] = B
@@ -77,10 +77,13 @@ def optimize(params,X,Y,learning_rate,epochs):
 def optimizationStep(params, X,Y,learning_rate):
     W= params["W"]
     B= params["B"]
-    print("AEX")
     Y_hat = forwardProp(params,X)
 
     (dW,dB)=backProp(params,X,Y,Y_hat)
+    print("Y",Y)
+    print("Y_hat",Y_hat)
+    print("dW",dW,dW.size)
+    print("dB",dB,dB.size)
     W = W -learning_rate*dW
     B = B -learning_rate*dB
     params["W"] = W
@@ -116,7 +119,7 @@ def backProp(params,X,Y,Y_hat):
     m = params["SNum"]
     dY_hat = costFunderivative(Y,Y_hat)
     dZ = dY_hat * sigmoidDerivative(Z)
-    #print("dZ=",dZ)
+    print("dZ=",dZ)
     Xr = np.transpose(X)
     #print("X=",Xr)
     dW = np.dot(dZ,np.transpose(Xr))
@@ -142,7 +145,7 @@ def main():
     img_w = 10
     img_h = 10
     learning_rate = 0.01
-    epochs = 9
+    epochs = 1
     SNum = 4
     print("Neron   recognition start point")
     (X,Y)=generateDataSet(img_w,img_h,SNum)
@@ -169,8 +172,8 @@ def main():
 
 
 
-    #ax = plt.gca();
-
+    ax = plt.gca();
+    x = np.linspace(0,1,30)
     #plt.plot(x,lossFucntioncrossEntropy(1,x))
     #plt.plot(x,lossFucntioncrossEntropy(0,x))
     #plt.show();
